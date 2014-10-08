@@ -25,6 +25,7 @@ import com.google.common.collect.ImmutableList;
 
 import io.dropwizard.jetty.ConnectorFactory;
 import io.dropwizard.jetty.HttpConnectorFactory;
+import io.dropwizard.jetty.HttpsConnectorFactory;
 import io.dropwizard.server.DefaultServerFactory;
 
 import java.net.InetSocketAddress;
@@ -42,12 +43,22 @@ public class ServiceUtil {
       serverFactory.setApplicationConnectors(Collections.<ConnectorFactory>emptyList());
       serverFactory.setAdminConnectors(Collections.<ConnectorFactory>emptyList());
     } else {
-      final HttpConnectorFactory serviceConnector = new HttpConnectorFactory();
+      final HttpsConnectorFactory serviceConnector = new HttpsConnectorFactory();
       serviceConnector.setPort(httpEndpoint.getPort());
       serviceConnector.setBindHost(httpEndpoint.getHostString());
+
+
+      serviceConnector.setKeyStorePassword("xxxxxx");
+      serviceConnector.setKeyStorePath("/home/drewc/.keystore");
+      serviceConnector.setCertAlias("mykey");
+      serviceConnector.setValidateCerts(false);
+      serviceConnector.setWantClientAuth(true);
+//serviceConnector.setTrustStorePassword("xxxxxx");
+//serviceConnector.setTrustStorePath("/home/drewc/.keystore");
+//serviceConnector.setTrustStoreType("jks");
       serverFactory.setApplicationConnectors(ImmutableList.<ConnectorFactory>of(serviceConnector));
 
-      final HttpConnectorFactory adminConnector = new HttpConnectorFactory();
+      final HttpsConnectorFactory adminConnector = new HttpsConnectorFactory();
       adminConnector.setPort(adminPort);
       serverFactory.setAdminConnectors(ImmutableList.<ConnectorFactory>of(adminConnector));
     }

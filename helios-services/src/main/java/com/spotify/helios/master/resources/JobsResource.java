@@ -44,10 +44,14 @@ import com.sun.jersey.api.core.InjectParam;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.security.Principal;
+import java.security.cert.X509Certificate;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import javax.security.auth.x500.X500Principal;
+import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
@@ -57,6 +61,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
 
 import static com.spotify.helios.common.protocol.CreateJobResponse.Status.INVALID_JOB_DEFINITION;
 import static com.spotify.helios.common.protocol.CreateJobResponse.Status.JOB_ALREADY_EXISTS;
@@ -87,7 +92,23 @@ public class JobsResource {
   @Produces(APPLICATION_JSON)
   @Timed
   @ExceptionMetered
-  public Map<JobId, Job> list(@QueryParam("q") @DefaultValue("") final String q) {
+  public Map<JobId, Job> list(@QueryParam("q") @DefaultValue("") final String q,
+    @Context HttpServletRequest request) {
+    log.warn("REQUEST PRINCIPAL IS {}", request.getUserPrincipal());
+
+    X509Certificate[] certs =
+     // Comes from org.mortbay.http.JsseListener
+        (X509Certificate[]) request.getAttribute("javax.servlet.request.X509Certificate");
+
+    if (certs != null) {
+      for (int n = 0; n < certs.length; n++) {
+        final X509Certificate x509Certificate = certs[n];
+        log.warn("SSL Client cert subject: " + x509Certificate.getSubjectDN().toString());
+        log.warn("kind of thing {}", x509Certificate.getSubjectDN().getClass());
+        log.warn("Issuer {}", x509Certificate.getIssuerX500Principal());
+      }
+    }
+
     final Map<JobId, Job> allJobs = model.getJobs();
 
     // Return all jobs if the query string is empty
