@@ -3,17 +3,18 @@ dependencies:
     - ./circle.sh dependencies
 
 test:
-  pre:
-    - ./circle.sh pre_test
   override:
     - ./circle.sh test:
         parallel: true
   post:
-    - ./circle.sh post_test
+    - ./circle.sh post_test:
+        parallel: true
 
 machine:
   pre:
     - helios/circle.sh pre_machine
+  post:
+    - helios/circle.sh post_machine
   services:
     - docker
   environment:
@@ -23,3 +24,4 @@ machine:
 general:
   artifacts:
     - artifacts
+    - /var/log/upstart/docker.log
