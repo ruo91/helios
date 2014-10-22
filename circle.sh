@@ -23,7 +23,8 @@ case "$1" in
 
     # run a docker speed tests
     wget http://cl.ly/code/0t0n3u1k2f2l/speedtest.sh
-    speedtest.sh > artifacts/speedtests.log
+    chmod +x speedtest.sh
+    ./speedtest.sh > artifacts/speedtests.log
 
     mvn clean install -T 2 -Dmaven.javadoc.skip=true -DskipTests=true -B -V
 
