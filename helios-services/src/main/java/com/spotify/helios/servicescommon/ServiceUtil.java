@@ -24,7 +24,6 @@ package com.spotify.helios.servicescommon;
 import com.google.common.collect.ImmutableList;
 
 import io.dropwizard.jetty.ConnectorFactory;
-import io.dropwizard.jetty.HttpConnectorFactory;
 import io.dropwizard.jetty.HttpsConnectorFactory;
 import io.dropwizard.server.DefaultServerFactory;
 
@@ -35,8 +34,6 @@ public class ServiceUtil {
   public static DefaultServerFactory createServerFactory(final InetSocketAddress httpEndpoint,
                                                          final int adminPort,
                                                          final boolean noHttp) {
-    // TODO(drewc) be more flexible on the httpEndpoint -- make it a URI -- so if/when we support
-    // SSL, it'll *just work*
 
     final DefaultServerFactory serverFactory = new DefaultServerFactory();
     if (noHttp) {
@@ -46,22 +43,24 @@ public class ServiceUtil {
       final HttpsConnectorFactory serviceConnector = new HttpsConnectorFactory();
       serviceConnector.setPort(httpEndpoint.getPort());
       serviceConnector.setBindHost(httpEndpoint.getHostString());
+      setSslConfig(serviceConnector);
 
-
-      serviceConnector.setKeyStorePassword("xxxxxx");
-      serviceConnector.setKeyStorePath("/home/drewc/.keystore");
-      serviceConnector.setCertAlias("mykey");
-      serviceConnector.setValidateCerts(false);
-      serviceConnector.setWantClientAuth(true);
-//serviceConnector.setTrustStorePassword("xxxxxx");
-//serviceConnector.setTrustStorePath("/home/drewc/.keystore");
-//serviceConnector.setTrustStoreType("jks");
       serverFactory.setApplicationConnectors(ImmutableList.<ConnectorFactory>of(serviceConnector));
 
       final HttpsConnectorFactory adminConnector = new HttpsConnectorFactory();
       adminConnector.setPort(adminPort);
+      setSslConfig(adminConnector);
+      
       serverFactory.setAdminConnectors(ImmutableList.<ConnectorFactory>of(adminConnector));
     }
     return serverFactory;
+  }
+
+  private static void setSslConfig(final HttpsConnectorFactory serviceConnector) {
+    serviceConnector.setKeyStorePassword("xxxxxx");
+    serviceConnector.setKeyStorePath("/home/drewc/.keystore");
+    serviceConnector.setCertAlias("mykey");
+    serviceConnector.setValidateCerts(false);
+    serviceConnector.setWantClientAuth(true);
   }
 }
