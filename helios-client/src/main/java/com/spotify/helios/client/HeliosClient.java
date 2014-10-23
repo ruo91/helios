@@ -61,6 +61,8 @@ import com.spotify.helios.common.protocol.VersionResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sun.net.www.protocol.https.HttpsURLConnectionImpl;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -78,6 +80,11 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLSession;
+import javax.security.cert.X509Certificate;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -155,25 +162,23 @@ public class HeliosClient implements AutoCloseable {
   }
 
   private String path(final String resource, final Object... params) {
-    final String path;
     if (params.length == 0) {
-      path = resource;
-    } else {
-      final List<String> encodedParams = Lists.newArrayList();
-      for (final Object param : params) {
-        final URI u;
-        try {
-          final String p = param.toString().replace("/", "%2F");
-          // URI does path encoding right, but using it is painful
-          u = new URI("http", "ignore", "/" + p, "");
-        } catch (URISyntaxException e) {
-          throw Throwables.propagate(e);
-        }
-        encodedParams.add(u.getRawPath().substring(1));
+      return resource;
+    } 
+      
+    final List<String> encodedParams = Lists.newArrayList();
+    for (final Object param : params) {
+      final URI u;
+      try {
+        final String p = param.toString().replace("/", "%2F");
+        // URI does path encoding right, but using it is painful
+        u = new URI("http", "ignore", "/" + p, "");
+      } catch (URISyntaxException e) {
+        throw Throwables.propagate(e);
       }
-      path = format(resource, encodedParams.toArray());
+      encodedParams.add(u.getRawPath().substring(1));
     }
-    return path;
+    return format(resource, encodedParams.toArray());
   }
 
   private ListenableFuture<Response> request(final URI uri, final String method) {
@@ -282,7 +287,7 @@ public class HeliosClient implements AutoCloseable {
       for (int i = 0; i < endpoints.size() && currentTimeMillis() < deadline; i++) {
         final URI endpoint = endpoints.get(positive(offset + i) % endpoints.size());
         final String fullpath = endpoint.getPath() + uri.getPath();
-        final URI realUri = new URI("http", endpoint.getHost() + ":" + endpoint.getPort(),
+        final URI realUri = new URI("https", endpoint.getHost() + ":" + endpoint.getPort(),
                                     fullpath, uri.getQuery(), null);
         try {
           log.debug("connecting to {}", realUri);
@@ -311,6 +316,13 @@ public class HeliosClient implements AutoCloseable {
     }
     final HttpURLConnection connection;
     connection = (HttpURLConnection) uri.toURL().openConnection();
+//    HttpsURLConnection x = (HttpsURLConnection) connection;
+//    x.setHostnameVerifier(new HostnameVerifier() {
+//      @Override
+//      public boolean verify(String hostname, SSLSession session) {
+//        return true;
+//      }
+//    });
     connection.setInstanceFollowRedirects(false);
     for (Map.Entry<String, List<String>> header : headers.entrySet()) {
       for (final String value : header.getValue()) {
@@ -321,7 +333,7 @@ public class HeliosClient implements AutoCloseable {
       connection.setDoOutput(true);
       connection.getOutputStream().write(entity);
     }
-    setRequestMethod(connection, method);
+    setRequestMethod(connection, method);    
     connection.getResponseCode();
     return connection;
   }
@@ -332,9 +344,8 @@ public class HeliosClient implements AutoCloseable {
 
   private void setRequestMethod(final HttpURLConnection connection, final String method) {
     // Nasty workaround for ancient HttpURLConnection only supporting few methods
-    final Class<?> httpURLConnectionClass = connection.getClass();
     try {
-      final Field methodField = httpURLConnectionClass.getSuperclass().getDeclaredField("method");
+      final Field methodField = HttpURLConnection.class.getDeclaredField("method");
       methodField.setAccessible(true);
       methodField.set(connection, method);
     } catch (NoSuchFieldException | IllegalAccessException e) {
@@ -497,6 +508,7 @@ public class HeliosClient implements AutoCloseable {
     @Override
     public ListenableFuture<T> apply(final Response reply)
         throws HeliosException {
+      System.err.println("RESPONSE = " + reply);
       if (reply.status == HTTP_NOT_FOUND && !decodeableStatusCodes.contains(HTTP_NOT_FOUND)) {
         return immediateFuture(null);
       }
