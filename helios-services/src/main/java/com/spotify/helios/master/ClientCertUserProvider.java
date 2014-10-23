@@ -42,29 +42,14 @@ public class ClientCertUserProvider extends AbstractHttpContextInjectable<String
     implements InjectableProvider<RequestUser, Type> {
   private static final Logger log = LoggerFactory.getLogger(ClientCertUserProvider.class);
 
+  
   @Override
   public String getValue(HttpContext context) {
     Principal principal = context.getRequest().getUserPrincipal();
     log.warn("principal.class {}", principal.getClass());
     log.warn("AuthScheme {}", context.getRequest().getAuthenticationScheme());
     log.warn("CERT {}", principal.getName());
-    return "FRED";
-//
-//    X509Certificate[] certs =
-//         // Comes from org.mortbay.http.JsseListener
-//            (X509Certificate[]) request.getAttribute("javax.servlet.request.X509Certificate");
-//
-//        if (certs != null) {
-//          for (int n = 0; n < certs.length; n++) {
-//            final X509Certificate x509Certificate = certs[n];
-//            log.warn("SSL Client cert subject: " + x509Certificate.getSubjectDN().toString());
-//            log.warn("kind of thing {}", x509Certificate.getSubjectDN().getClass());
-//            log.warn("Issuer {}", x509Certificate.getIssuerX500Principal());
-//          }
-//        }
-//
-
-
+    return principal.getName();
   }
 
   @Override

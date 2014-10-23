@@ -38,6 +38,7 @@ import com.spotify.helios.master.JobDoesNotExistException;
 import com.spotify.helios.master.JobExistsException;
 import com.spotify.helios.master.JobStillDeployedException;
 import com.spotify.helios.master.MasterModel;
+import com.spotify.helios.master.SslSession;
 import com.spotify.helios.servicescommon.statistics.MasterMetrics;
 import com.sun.jersey.api.core.InjectParam;
 
@@ -47,6 +48,7 @@ import org.slf4j.LoggerFactory;
 import java.security.Principal;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -93,21 +95,9 @@ public class JobsResource {
   @Timed
   @ExceptionMetered
   public Map<JobId, Job> list(@QueryParam("q") @DefaultValue("") final String q,
-    @Context HttpServletRequest request) {
-    log.warn("REQUEST PRINCIPAL IS {}", request.getUserPrincipal());
+    @RequestUser final String username) {
+    log.warn("user is {}", username);
 
-    X509Certificate[] certs =
-     // Comes from org.mortbay.http.JsseListener
-        (X509Certificate[]) request.getAttribute("javax.servlet.request.X509Certificate");
-
-    if (certs != null) {
-      for (int n = 0; n < certs.length; n++) {
-        final X509Certificate x509Certificate = certs[n];
-        log.warn("SSL Client cert subject: " + x509Certificate.getSubjectDN().toString());
-        log.warn("kind of thing {}", x509Certificate.getSubjectDN().getClass());
-        log.warn("Issuer {}", x509Certificate.getIssuerX500Principal());
-      }
-    }
 
     final Map<JobId, Job> allJobs = model.getJobs();
 
