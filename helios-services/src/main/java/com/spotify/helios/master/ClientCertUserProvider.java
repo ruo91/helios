@@ -21,8 +21,6 @@
 
 package com.spotify.helios.master;
 
-import com.google.common.base.Joiner;
-
 import com.spotify.helios.master.resources.RequestUser;
 import com.sun.jersey.api.core.HttpContext;
 import com.sun.jersey.core.spi.component.ComponentContext;
@@ -35,6 +33,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Type;
+import java.security.Principal;
 
 import javax.ws.rs.ext.Provider;
 
@@ -45,7 +44,10 @@ public class ClientCertUserProvider extends AbstractHttpContextInjectable<String
 
   @Override
   public String getValue(HttpContext context) {
-    log.warn("CERT {}", context.getClass());
+    Principal principal = context.getRequest().getUserPrincipal();
+    log.warn("principal.class {}", principal.getClass());
+    log.warn("AuthScheme {}", context.getRequest().getAuthenticationScheme());
+    log.warn("CERT {}", principal.getName());
     return "FRED";
 //
 //    X509Certificate[] certs =
