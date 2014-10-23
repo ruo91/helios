@@ -38,22 +38,16 @@ import com.spotify.helios.master.JobDoesNotExistException;
 import com.spotify.helios.master.JobExistsException;
 import com.spotify.helios.master.JobStillDeployedException;
 import com.spotify.helios.master.MasterModel;
-import com.spotify.helios.master.SslSession;
 import com.spotify.helios.servicescommon.statistics.MasterMetrics;
 import com.sun.jersey.api.core.InjectParam;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.security.Principal;
-import java.security.cert.X509Certificate;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import javax.security.auth.x500.X500Principal;
-import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
@@ -63,7 +57,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
 
 import static com.spotify.helios.common.protocol.CreateJobResponse.Status.INVALID_JOB_DEFINITION;
 import static com.spotify.helios.common.protocol.CreateJobResponse.Status.JOB_ALREADY_EXISTS;
@@ -97,7 +90,6 @@ public class JobsResource {
   public Map<JobId, Job> list(@QueryParam("q") @DefaultValue("") final String q,
     @RequestUser final String username) {
     log.warn("user is {}", username);
-
 
     final Map<JobId, Job> allJobs = model.getJobs();
 

@@ -24,7 +24,6 @@ package com.spotify.helios.master;
 import ch.qos.logback.access.jetty.RequestLogImpl;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
 import com.google.common.io.Resources;
 import com.google.common.util.concurrent.AbstractIdleService;
 
@@ -54,7 +53,6 @@ import com.spotify.helios.servicescommon.coordination.ZooKeeperModelReporter;
 import com.spotify.helios.servicescommon.statistics.Metrics;
 import com.spotify.helios.servicescommon.statistics.MetricsImpl;
 import com.spotify.helios.servicescommon.statistics.NoopMetrics;
-import com.sun.jersey.api.core.ResourceConfig;
 
 import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
@@ -74,7 +72,6 @@ import io.dropwizard.setup.Environment;
 
 import java.io.IOException;
 import java.util.EnumSet;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import javax.servlet.DispatcherType;
@@ -158,10 +155,7 @@ public class MasterService extends AbstractIdleService {
         .addFilter("VersionResponseFilter", VersionResponseFilter.class)
         .addMappingForUrlPatterns(EnumSet.of(DispatcherType.REQUEST), true, "/*");
 
-    environment.jersey().register(SslIdentityFilter.class);
-    
-    environment.jersey().getResourceConfig().getContainerRequestFilters()
-      .add(SslIdentityFilter.class);
+    addSslIdentityFilter(environment);
     
     environment.jersey().register(
         new ReportingResourceMethodDispatchAdapter(metrics.getMasterMetrics()));
@@ -182,6 +176,13 @@ public class MasterService extends AbstractIdleService {
     this.server = serverFactory.build(environment);
 
     setUpRequestLogging();
+  }
+
+  @SuppressWarnings("unchecked")
+  private void addSslIdentityFilter(final Environment environment) {
+    environment.jersey().register(SslIdentityFilter.class);
+    environment.jersey().getResourceConfig().getContainerRequestFilters()
+      .add(SslIdentityFilter.class);
   }
 
   private final void setUpRequestLogging() {

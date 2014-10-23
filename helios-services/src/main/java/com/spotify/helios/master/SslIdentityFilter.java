@@ -30,10 +30,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.security.Principal;
+import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
+import java.util.Collection;
 import java.util.List;
-import java.util.Map.Entry;
 
+import javax.security.auth.x500.X500Principal;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.SecurityContext;
@@ -45,13 +47,8 @@ public class SslIdentityFilter implements ContainerRequestFilter {
   
   @Override
   public ContainerRequest filter(final ContainerRequest request) {
-    log.warn("servlet erquest is {}", servletRequest);
-    
-    
-    
-
-    X509Certificate[] certs =
-     // Comes from org.mortbay.http.JsseListener
+    final X509Certificate[] certs =
+        // Don't you love magical constants? --> Comes from org.mortbay.http.JsseListener
         (X509Certificate[]) servletRequest.getAttribute("javax.servlet.request.X509Certificate");
 
     final X509Certificate firstCert;
@@ -75,6 +72,7 @@ public class SslIdentityFilter implements ContainerRequestFilter {
 
       @Override
       public boolean isUserInRole(String role) {
+        
         return false;
       }
 

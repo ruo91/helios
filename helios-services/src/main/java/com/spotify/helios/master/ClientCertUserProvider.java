@@ -35,6 +35,9 @@ import org.slf4j.LoggerFactory;
 import java.lang.reflect.Type;
 import java.security.Principal;
 
+import javax.naming.InvalidNameException;
+import javax.naming.ldap.LdapName;
+import javax.naming.ldap.Rdn;
 import javax.ws.rs.ext.Provider;
 
 @Provider
@@ -46,10 +49,29 @@ public class ClientCertUserProvider extends AbstractHttpContextInjectable<String
   @Override
   public String getValue(HttpContext context) {
     Principal principal = context.getRequest().getUserPrincipal();
+    if (principal == null) {
+      log.warn("no principal provided");
+      return null;
+    }
     log.warn("principal.class {}", principal.getClass());
     log.warn("AuthScheme {}", context.getRequest().getAuthenticationScheme());
     log.warn("CERT {}", principal.getName());
-    return principal.getName();
+    LdapName ln;
+    try {
+      ln = new LdapName(principal.getName());
+    } catch (InvalidNameException e) {
+      e.printStackTrace();
+      return null;
+    }
+    for (Rdn rdn : ln.getRdns()) {
+      log.warn("got rdn type: {}", rdn.getType());
+      if (rdn.getType().equalsIgnoreCase("UID")) {
+        log.warn("UID is: ()", rdn.getValue());
+        return (String) rdn.getValue();
+      }
+    }
+    log.warn("no UID found");
+    return null;
   }
 
   @Override
