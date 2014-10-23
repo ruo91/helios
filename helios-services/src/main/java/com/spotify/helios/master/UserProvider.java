@@ -49,10 +49,7 @@ public class UserProvider extends AbstractHttpContextInjectable<String>
 
   @Override
   public Injectable<?> getInjectable(ComponentContext ctx, RequestUser ruAnnotation, Type type) {
-    if (type.equals(String.class)) {
-      return this;
-    }
-    return null;
+    return type.equals(String.class) ? this : null;
   }
 
   @Override

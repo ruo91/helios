@@ -155,7 +155,8 @@ public class MasterService extends AbstractIdleService {
         .addFilter("VersionResponseFilter", VersionResponseFilter.class)
         .addMappingForUrlPatterns(EnumSet.of(DispatcherType.REQUEST), true, "/*");
 
-    addSslIdentityFilter(environment);
+    environment.jersey().getResourceConfig().getContainerRequestFilters()
+        .add(SslIdentityFilter.class);
     
     environment.jersey().register(
         new ReportingResourceMethodDispatchAdapter(metrics.getMasterMetrics()));
@@ -176,13 +177,6 @@ public class MasterService extends AbstractIdleService {
     this.server = serverFactory.build(environment);
 
     setUpRequestLogging();
-  }
-
-  @SuppressWarnings("unchecked")
-  private void addSslIdentityFilter(final Environment environment) {
-    environment.jersey().register(SslIdentityFilter.class);
-    environment.jersey().getResourceConfig().getContainerRequestFilters()
-      .add(SslIdentityFilter.class);
   }
 
   private final void setUpRequestLogging() {

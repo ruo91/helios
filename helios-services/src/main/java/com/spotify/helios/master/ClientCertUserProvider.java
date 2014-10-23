@@ -44,7 +44,6 @@ import javax.ws.rs.ext.Provider;
 public class ClientCertUserProvider extends AbstractHttpContextInjectable<String>
     implements InjectableProvider<RequestUser, Type> {
   private static final Logger log = LoggerFactory.getLogger(ClientCertUserProvider.class);
-
   
   @Override
   public String getValue(HttpContext context) {
@@ -53,10 +52,8 @@ public class ClientCertUserProvider extends AbstractHttpContextInjectable<String
       log.warn("no principal provided");
       return null;
     }
-    log.warn("principal.class {}", principal.getClass());
-    log.warn("AuthScheme {}", context.getRequest().getAuthenticationScheme());
-    log.warn("CERT {}", principal.getName());
-    LdapName ln;
+    log.warn("CERT name {}", principal.getName());
+    final LdapName ln;
     try {
       ln = new LdapName(principal.getName());
     } catch (InvalidNameException e) {
@@ -64,22 +61,17 @@ public class ClientCertUserProvider extends AbstractHttpContextInjectable<String
       return null;
     }
     for (Rdn rdn : ln.getRdns()) {
-      log.warn("got rdn type: {}", rdn.getType());
       if (rdn.getType().equalsIgnoreCase("UID")) {
-        log.warn("UID is: ()", rdn.getValue());
         return (String) rdn.getValue();
       }
     }
-    log.warn("no UID found");
+    log.info("no UID found in {}", principal.getName());
     return null;
   }
 
   @Override
   public Injectable<?> getInjectable(ComponentContext ctx, RequestUser ruAnnotation, Type type) {
-    if (type.equals(String.class)) {
-      return this;
-    }
-    return null;
+    return type.equals(String.class) ? this : null;
   }
 
   @Override

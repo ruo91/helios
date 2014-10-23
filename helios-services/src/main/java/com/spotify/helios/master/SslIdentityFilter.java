@@ -21,28 +21,15 @@
 
 package com.spotify.helios.master;
 
-import com.google.common.base.Joiner;
-
 import com.sun.jersey.spi.container.ContainerRequest;
 import com.sun.jersey.spi.container.ContainerRequestFilter;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.security.Principal;
-import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
-import java.util.Collection;
-import java.util.List;
 
-import javax.security.auth.x500.X500Principal;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.Context;
-import javax.ws.rs.core.SecurityContext;
 
 public class SslIdentityFilter implements ContainerRequestFilter {
-  private static final Logger log = LoggerFactory.getLogger(SslIdentityFilter.class);
-
   @Context public HttpServletRequest servletRequest;
   
   @Override
@@ -52,42 +39,12 @@ public class SslIdentityFilter implements ContainerRequestFilter {
         (X509Certificate[]) servletRequest.getAttribute("javax.servlet.request.X509Certificate");
 
     final X509Certificate firstCert;
-    if (certs != null) {
-      firstCert = certs[0];
-      for (int n = 0; n < certs.length; n++) {
-        final X509Certificate x509Certificate = certs[n];
-        log.warn("SSL Client cert subject: " + x509Certificate.getSubjectDN().toString());
-        log.warn("kind of thing {}", x509Certificate.getSubjectDN().getClass());
-        log.warn("Issuer {}", x509Certificate.getIssuerX500Principal());
-      }
-    } else {
+    if (certs == null) {
       return request;
-    }
+    } 
+    firstCert = certs[0];
 
-    request.setSecurityContext(new SecurityContext() {
-      @Override
-      public Principal getUserPrincipal() {
-        return firstCert.getSubjectDN();
-      }
-
-      @Override
-      public boolean isUserInRole(String role) {
-        
-        return false;
-      }
-
-      @Override
-      public boolean isSecure() {
-        return true;
-      }
-
-      @Override
-      public String getAuthenticationScheme() {
-        return "CERT_AUTH";
-      }
-      
-    });
+    request.setSecurityContext(new SslSecurityContextImpl(firstCert));
     return request;
   }
-
 }

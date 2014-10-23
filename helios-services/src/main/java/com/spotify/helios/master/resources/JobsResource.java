@@ -57,6 +57,8 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.SecurityContext;
 
 import static com.spotify.helios.common.protocol.CreateJobResponse.Status.INVALID_JOB_DEFINITION;
 import static com.spotify.helios.common.protocol.CreateJobResponse.Status.JOB_ALREADY_EXISTS;
@@ -88,8 +90,9 @@ public class JobsResource {
   @Timed
   @ExceptionMetered
   public Map<JobId, Job> list(@QueryParam("q") @DefaultValue("") final String q,
-    @RequestUser final String username) {
+    @RequestUser final String username, @Context SecurityContext ctx) {
     log.warn("user is {}", username);
+    log.warn("ctx. {}", ctx.isUserInRole("spotify"));
 
     final Map<JobId, Job> allJobs = model.getJobs();
 
