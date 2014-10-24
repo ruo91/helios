@@ -1,0 +1,82 @@
+the ca itself:
+————–
+CA_NAME=helios-ca
+openssl genrsa -aes256 -out $CA_NAME.key 4096
+
+-- genrsa above supports a -passout argument see the PASS PHRASE section of the openssl manpage
+
+openssl req -x509 -sha512 -new -nodes -key $CA_NAME.key -days 65000 -out $CA_NAME.pem
+
+-- can use -passin above similar to the -passout argument to genrsa and ability to supply the DN information
+openssl req -x509 -sha512 -new -nodes -key $CA_NAME.key -days 65000 -out $CA_NAME.pem -passin pass:passout -multivalue-rdn -subj "/DC=com/DC=spotify/CN=helios-ca"
+
+
+a site certificate:
+————————–
+SITE=shared.cloud
+openssl genrsa -out $SITE.key 2048
+openssl req -sha512 -new -key $SITE.key -out $SITE.csr
+
+-- the below takes a -days argument to specify expiration
+openssl x509 -sha512 -req -in $SITE.csr -CA $CA_NAME.pem -CAkey $CA_NAME.key -CAcreateserial -out $SITE.crt -days 65000
+
+-- generate CSR with automated values
+openssl req -sha512 -new -key $SITE.key -out $SITE.csr -multivalue-rdn -subj "/DC=com/DC=spotify/DC=site/UID=$SITE"
+
+
+-- verify a certificate against the ca cert
+openssl verify -CAfile ./rootCA-FooBar.pem foobar.dyndns.org.crt 
+
+
+(08:25:18)  {exit:1} $ keytool -importcert -file shared.cloud.crt -keystore ../helios/keystore -alias mycert
+
+
+
+(08:26:31)  {exit:127} $ keytool -importcert -file shared.cloud.key -keystore ../helios/keystore -alias mykey
+-----------------------------------------
+keytool -genkey -alias mykey -keyalg RSA -keysize 2048
+(08:37:13)  $ keytool -certreq -alias mykey -file shared.cloud.csr
+(08:47:11)  {exit:1} $ keytool -importcert -file helios-ca.pem -alias cacert
+
+
+---------------------------------------
+
+--- generating key outside of keytool
+
+http://stackoverflow.com/questions/906402/importing-an-existing-x509-certificate-and-private-key-in-java-keystore-to-use-i
+
+----------------------------------------
+
+
+-- generate CA cert
+
+openssl req -new -newkey rsa:1024 -nodes -out ca.csr -keyout ca.key \
+-multivalue-rdn -subj "/DC=com/DC=spotify/CN=helios-ca"
+
+openssl x509 -trustout -signkey ca.key -days 365 -req -in ca.csr -out ca.pem
+
+
+-- generating server certs with keytool (for masters)
+
+keytool -genkey -alias mykey -keyalg RSA -keysize 2048 -storepass 'xxxxxx' -keypass 'xxxxxx' -dname "DC=com,DC=spotify,DC=helios,CN=shared.cloud"
+keytool -certreq -alias mykey -file shared.cloud.csr -storepass 'xxxxxx' 
+
+openssl x509 -sha512 -req -in shared.cloud.csr -CA ../helios-ssl/ca.pem -CAkey ../helios-ssl/ca.key -CAcreateserial -out shared.cloud.crt -days 65000
+
+keytool -importcert -alias root -file ../helios-ssl/ca.pem -storepass 'xxxxxx' -noprompt
+keytool -importcert -file shared.cloud.crt -storepass 'xxxxxx' 
+
+
+
+
+---- generating client certs with keytool (for helios CLI)
+keytool -genkey -alias mykey -keyalg RSA -keysize 2048 -keystore ./keystore.jks -dname "DC=com,DC=spotify,UID=drewc"  -storepass 'xxxxxx' -keypass 'xxxxxx'
+keytool -certreq -alias mykey -file drewc.csr -keystore ./keystore.jks -storepass xxxxxx
+openssl x509 -sha512 -req -in drewc.csr -CA ../helios-ssl/ca.pem -CAkey ../helios-ssl/ca.key -CAcreateserial -out drewc.crt -days 65000
+keytool -import -trustcacerts -keystore ./keystore.jks -alias root -file ../helios-ssl/ca.pem -storepass 'xxxxxx' -noprompt
+
+#doesn't seem like I should need this....
+keytool -importcert -keystore ./keystore.jks -file ../helios-ssl/shared.cloud.crt -alias shared.cloud -storepass 'xxxxxx' -noprompt
+
+-- can't add this before due to cert chain stuff
+keytool -importcert -keystore ./keystore.jks  -file drewc.crt  -storepass 'xxxxxx'

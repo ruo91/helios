@@ -1,0 +1,24 @@
+master
+
+
+java \
+-Djavax.net.debug=ssl \
+-Djavax.net.ssl.keyStore=/home/drewc/.keystore \
+-Djavax.net.ssl.keyStorePassword=xxxxxx \
+-Djavax.net.ssl.trustStore=/home/drewc/.keystore \
+-Djavax.net.ssl.trustStorePassword=xxxxxx \
+    -Djava.net.preferIPv4Stack=true \
+    -cp ./helios-services/target/helios-services*-shaded.jar \
+    com.spotify.helios.master.MasterMain
+
+java \
+-Djavax.net.debug=ssl \
+-Djavax.net.ssl.keyStore=/home/drewc/devel/helios/keystore.jks \
+-Djavax.net.ssl.keyStorePassword=xxxxxx \
+-Djavax.net.ssl.trustStore=/home/drewc/devel/helios/keystore.jks \
+-Djavax.net.ssl.trustStorePassword=xxxxxx \
+-Djava.net.preferIPv4Stack=true \
+-cp  ./helios-tools/target/helios-tools*-shaded.jar \
+   com.spotify.helios.cli.CliMain \
+  -v -z https://shared.cloud:5801 jobs
+
