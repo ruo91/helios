@@ -85,6 +85,8 @@ public class JobTest {
     final String setRegistrationDomain = "my.domain";
     final String setCreatingUser = "username";
     final Resources setResources = new Resources(10485760L, 10485761L, 4L, "1");
+    final String setToken = "mysupersecrettoken";
+    final HealthCheck setHealthCheck = HealthCheck.of("healthcheck-port", "/service/healthcheck");
 
     // Input to addXXX
     final Map<String, String> addEnv = ImmutableMap.of("add", "env");
@@ -109,6 +111,8 @@ public class JobTest {
     final String expectedRegistrationDomain = setRegistrationDomain;
     final String expectedCreatingUser = setCreatingUser;
     final Resources expectedResources = setResources;
+    final String expectedToken = setToken;
+    final HealthCheck expectedHealthCheck = setHealthCheck;
 
     // Check setXXX methods
     builder.setName(setName);
@@ -124,6 +128,8 @@ public class JobTest {
     builder.setRegistrationDomain(setRegistrationDomain);
     builder.setCreatingUser(setCreatingUser);
     builder.setResources(setResources);
+    builder.setToken(setToken);
+    builder.setHealthCheck(setHealthCheck);
     assertEquals("name", setName, builder.getName());
     assertEquals("version", setVersion, builder.getVersion());
     assertEquals("image", setImage, builder.getImage());
@@ -137,6 +143,8 @@ public class JobTest {
     assertEquals("registrationDomain", setRegistrationDomain, builder.getRegistrationDomain());
     assertEquals("creatingUser", setCreatingUser, builder.getCreatingUser());
     assertEquals("resources", setResources, builder.getResources());
+    assertEquals("token", setToken, builder.getToken());
+    assertEquals("healthCheck", setHealthCheck, builder.getHealthCheck());
 
     // Check addXXX methods
     for (final Map.Entry<String, String> entry : addEnv.entrySet()) {
@@ -164,6 +172,8 @@ public class JobTest {
     assertEquals("registrationDomain", expectedRegistrationDomain, builder.getRegistrationDomain());
     assertEquals("creatingUser", expectedCreatingUser, builder.getCreatingUser());
     assertEquals("resources", expectedResources, builder.getResources());
+    assertEquals("token", expectedToken, builder.getToken());
+    assertEquals("healthCheck", expectedHealthCheck, builder.getHealthCheck());
 
     // Check final output
     final Job job = builder.build();
@@ -180,6 +190,8 @@ public class JobTest {
     assertEquals("registrationDomain", expectedRegistrationDomain, job.getRegistrationDomain());
     assertEquals("creatingUser", expectedCreatingUser, job.getCreatingUser());
     assertEquals("resources", expectedResources, job.getResources());
+    assertEquals("token", expectedToken, job.getToken());
+    assertEquals("healthCheck", expectedHealthCheck, job.getHealthCheck());
 
     // Check toBuilder
     final Job.Builder rebuilder = job.toBuilder();
@@ -197,6 +209,8 @@ public class JobTest {
         rebuilder.getRegistrationDomain());
     assertEquals("creatingUser", expectedCreatingUser, rebuilder.getCreatingUser());
     assertEquals("resources", expectedResources, rebuilder.getResources());
+    assertEquals("token", expectedToken, rebuilder.getToken());
+    assertEquals("healthCheck", expectedHealthCheck, rebuilder.getHealthCheck());
 
     // Check clone
     final Job.Builder cloned = builder.clone();
@@ -214,6 +228,8 @@ public class JobTest {
         cloned.getRegistrationDomain());
     assertEquals("creatingUser", expectedCreatingUser, cloned.getCreatingUser());
     assertEquals("resources", expectedResources, cloned.getResources());
+    assertEquals("token", expectedToken, cloned.getToken());
+    assertEquals("healthCheck", expectedHealthCheck, cloned.getHealthCheck());
 
     final Job clonedJob = cloned.build();
     assertEquals("name", expectedName, clonedJob.getId().getName());
@@ -230,6 +246,8 @@ public class JobTest {
         clonedJob.getRegistrationDomain());
     assertEquals("creatingUser", expectedCreatingUser, clonedJob.getCreatingUser());
     assertEquals("resources", expectedResources, clonedJob.getResources());
+    assertEquals("token", expectedToken, clonedJob.getToken());
+    assertEquals("healthCheck", expectedHealthCheck, clonedJob.getHealthCheck());
   }
 
   @SafeVarargs
@@ -342,6 +360,7 @@ public class JobTest {
     final Map<ServiceEndpoint, ServicePorts> expectedRegistration =
         ImmutableMap.of(ServiceEndpoint.of("foo", "tcp"), ServicePorts.of("p1"));
     final Integer expectedGracePeriod = 240;
+    final HealthCheck expectedHealthCheck = HealthCheck.of("healthcheck-endpoint", "/ping");
 
     final List<String> mutableCommand = Lists.newArrayList(expectedCommand);
     final Map<String, String> mutableEnv = Maps.newHashMap(expectedEnv);
@@ -357,7 +376,8 @@ public class JobTest {
         .setName("foozbarz")
         .setVersion("17")
         .setRegistration(mutableRegistration)
-        .setGracePeriod(expectedGracePeriod);
+        .setGracePeriod(expectedGracePeriod)
+        .setHealthCheck(expectedHealthCheck);
 
     final Job job = builder.build();
 
@@ -377,5 +397,6 @@ public class JobTest {
     assertEquals(expectedPorts, job.getPorts());
     assertEquals(expectedRegistration, job.getRegistration());
     assertEquals(expectedGracePeriod, job.getGracePeriod());
+    assertEquals(expectedHealthCheck, job.getHealthCheck());
   }
 }

@@ -79,6 +79,7 @@ public class JobCreateCommand extends ControlCommand {
   private final Argument gracePeriodArg;
   private final Argument volumeArg;
   private final Argument expiresArg;
+  private final Argument healthCheckArg;
 
   public JobCreateCommand(final Subparser parser) {
     super(parser);
@@ -160,6 +161,20 @@ public class JobCreateCommand extends ControlCommand {
         .help("An ISO-8601 string representing the date/time when this job should expire. The " +
               "job will be undeployed from all hosts and removed at this time. E.g. " +
               "2014-06-01T12:00:00Z");
+
+    healthCheckArg = parser.addArgument("--healthcheck")
+        .help("Specify an HTTP endpoint in the container on which the Helios agent can perform a " +
+              "health check. If this is specified, the Helios agent will start the container, " +
+              "wait until the container is \"RUNNING\", make an HTTP GET request to the health " +
+              "check endpoint, and only register the service with the service registration " +
+              "plugin (if one was provided) if the health check returns an HTTP status code of " +
+              "200. Otherwise, the agent will consider the health check to have failed and will " +
+              "not register the service but will keep the container deployed.\n\n" +
+              "Use this format: port_name:url_path[:timeout] where port_name is the name of a " +
+              "port specified with \"--port\", url_path is the path of the health check URL, " +
+              "and timeout is when, in seconds, the agent will stop retrying " +
+              "(defaults to 2 minutes). E.g. admin-port:/url/path/for/healthcheck or " +
+              "admin-port:/url/path/for/healthcheck:30.");
   }
 
   @Override
@@ -374,6 +389,35 @@ public class JobCreateCommand extends ControlCommand {
     }
 
     builder.setToken(options.getString(tokenArg.getDest()));
+
+    // Parse health check arg
+    final String healthCheckSpec = options.getString(healthCheckArg.getDest());
+    final Map<String, PortMapping> explicitPorts = Maps.newHashMap();
+    final Pattern healthCheckPattern =
+        compile("(?<n>[_\\-\\w]+):(?<p>[/_\\-\\w])(:(?<t>\\d+))?");
+//    for (final String spec : portSpecs) {
+    final Matcher healthCheckMatcher = healthCheckPattern.matcher(healthCheckSpec);
+    if (!healthCheckMatcher.matches()) {
+      throw new IllegalArgumentException("Bad health check: " + healthCheckSpec);
+    }
+
+    final String healthCheckPortName = healthCheckMatcher.group("n");
+    final String healthCheckUrlPath = healthCheckMatcher.group("p");
+    final int timeout = fromNullable(healthCheckMatcher.group("t"));
+    final Integer external = nullOrInteger(healthCheckMatcher.group("t"));
+
+    if (explicitPorts.containsKey(portName)) {
+      throw new IllegalArgumentException("Duplicate port mapping: " + portName);
+    }
+
+    explicitPorts.put(portName, PortMapping.of(internal, external, protocol));
+//    }
+
+    // Merge port mappings
+    final Map<String, PortMapping> ports = Maps.newHashMap();
+    ports.putAll(builder.getPorts());
+    ports.putAll(explicitPorts);
+    builder.setPorts(ports);
 
     final Job job = builder.build();
 
