@@ -254,6 +254,7 @@ public class AgentService extends AbstractIdleService implements Managed {
 
     final SupervisorFactory supervisorFactory = new SupervisorFactory(
         model, monitoredDockerClient,
+        kafkaClientProvider,
         config.getEnvVars(), serviceRegistrar,
         decorators,
         config.getDockerHost(),

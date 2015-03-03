@@ -21,6 +21,7 @@
 
 package com.spotify.helios.agent;
 
+import com.google.common.base.Optional;
 import com.google.common.util.concurrent.MoreExecutors;
 
 import com.spotify.docker.client.ImageNotFoundException;
@@ -29,10 +30,13 @@ import com.spotify.helios.common.descriptors.JobId;
 import com.spotify.helios.common.descriptors.TaskStatus;
 import com.spotify.helios.common.descriptors.ThrottleState;
 
+import org.apache.kafka.clients.producer.KafkaProducer;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
+
 import java.util.Objects;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -48,6 +52,7 @@ import static com.spotify.helios.common.descriptors.ThrottleState.FLAPPING;
 import static com.spotify.helios.common.descriptors.ThrottleState.IMAGE_MISSING;
 import static com.spotify.helios.common.descriptors.ThrottleState.IMAGE_PULL_FAILED;
 import static com.spotify.helios.common.descriptors.ThrottleState.NO;
+
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -64,6 +69,7 @@ public class TaskMonitor implements TaskRunner.Listener, Closeable {
   private final ScheduledExecutorService scheduler;
   private final FlapController flapController;
   private final StatusUpdater statusUpdater;
+  private final Optional<KafkaProducer<String, String>> kafkaProducer;
 
   private volatile ScheduledFuture<?> flapTimeout;
 
@@ -71,10 +77,12 @@ public class TaskMonitor implements TaskRunner.Listener, Closeable {
   private ThrottleState throttle = NO;
 
   public TaskMonitor(final JobId jobId, final FlapController flapController,
-                     final StatusUpdater statusUpdater) {
+                     final StatusUpdater statusUpdater,
+                     final Optional<KafkaProducer<String, String>> kafkaProducer) {
     this.jobId = jobId;
     this.flapController = flapController;
     this.statusUpdater = statusUpdater;
+    this.kafkaProducer = kafkaProducer;
 
     final ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(1);
     // Let core threads time out to avoid unnecessarily keeping a flapping state check thread alive

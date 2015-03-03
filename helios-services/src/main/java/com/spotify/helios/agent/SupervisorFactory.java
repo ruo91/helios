@@ -21,12 +21,17 @@
 
 package com.spotify.helios.agent;
 
+import com.google.common.base.Optional;
+
 import com.spotify.docker.client.DockerClient;
 import com.spotify.helios.common.descriptors.Job;
 import com.spotify.helios.common.descriptors.TaskStatus;
 import com.spotify.helios.serviceregistration.ServiceRegistrar;
 import com.spotify.helios.servicescommon.DockerHost;
 import com.spotify.helios.servicescommon.statistics.SupervisorMetrics;
+
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.common.serialization.StringSerializer;
 
 import java.util.List;
 import java.util.Map;
@@ -51,8 +56,10 @@ public class SupervisorFactory {
   private final SupervisorMetrics metrics;
   private final String defaultRegistrationDomain;
   private final List<String> dns;
+  private final Optional<KafkaProducer<String, String>> kafkaProducer;
 
   public SupervisorFactory(final AgentModel model, final DockerClient dockerClient,
+                           final KafkaClientProvider kafkaProvider,
                            final Map<String, String> envVars,
                            final ServiceRegistrar registrar,
                            final List<ContainerDecorator> containerDecorators,
@@ -74,6 +81,10 @@ public class SupervisorFactory {
     this.defaultRegistrationDomain = checkNotNull(defaultRegistrationDomain,
                                                   "defaultRegistrationDomain");
     this.dns = checkNotNull(dns, "dns");
+
+    // Get the Kafka Producer suitable for TaskStatus events.
+    this.kafkaProducer = kafkaProvider.getProducer(
+        new StringSerializer(), new StringSerializer());
   }
 
   /**
@@ -88,6 +99,7 @@ public class SupervisorFactory {
                            final Map<String, Integer> ports,
                            final Supervisor.Listener listener) {
     final RestartPolicy policy = RestartPolicy.newBuilder().build();
+
     final TaskConfig taskConfig = TaskConfig.builder()
         .host(host)
         .job(job)
@@ -103,12 +115,16 @@ public class SupervisorFactory {
         .setJob(job)
         .setEnv(taskConfig.containerEnv())
         .setPorts(taskConfig.ports());
+
     final StatusUpdater statusUpdater = new DefaultStatusUpdater(model, taskStatus);
     final FlapController flapController = FlapController.create();
-    final TaskMonitor taskMonitor = new TaskMonitor(job.getId(), flapController, statusUpdater);
+
+    final TaskMonitor taskMonitor = new TaskMonitor(job.getId(), flapController, statusUpdater,
+        kafkaProducer);
 
     final HealthChecker healthChecker = HealthCheckerFactory.create(
         taskConfig, dockerClient, dockerHost);
+
     final TaskRunnerFactory runnerFactory = TaskRunnerFactory.builder()
         .config(taskConfig)
         .registrar(registrar)
