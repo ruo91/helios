@@ -95,7 +95,7 @@ public class HealthCheckerFactory {
           output = stream.readFully();
         }
 
-        int exitCode = docker.execInspect(execId).exitCode();
+        final int exitCode = docker.execInspect(execId).exitCode();
         if (exitCode != 0) {
           log.info("healthcheck failed with exit code {}. output {}", exitCode, output);
           return false;
@@ -130,9 +130,9 @@ public class HealthCheckerFactory {
         return false;
       }
 
-      Iterable<String> split = Splitter.on(".").split(apiVersion);
-      int major = Integer.parseInt(Iterables.get(split, 0, "0"));
-      int minor = Integer.parseInt(Iterables.get(split, 1, "0"));
+      final Iterable<String> split = Splitter.on(".").split(apiVersion);
+      final int major = Integer.parseInt(Iterables.get(split, 0, "0"));
+      final int minor = Integer.parseInt(Iterables.get(split, 1, "0"));
       return major == 1 && minor >= 18;
     }
   }

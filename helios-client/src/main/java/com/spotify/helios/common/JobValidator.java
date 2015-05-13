@@ -385,7 +385,7 @@ public class JobValidator {
     final Set<String> errors = Sets.newHashSet();
 
     if (healthCheck instanceof ExecHealthCheck) {
-      List<String> command = ((ExecHealthCheck) healthCheck).getCommand();
+      final List<String> command = ((ExecHealthCheck) healthCheck).getCommand();
       if (command == null || command.isEmpty()) {
         errors.add("A command must be defined for `docker exec`-based health checks.");
       }

@@ -256,7 +256,7 @@ public class HealthCheckTest extends ServiceRegistrationTestBase {
 
     final JobId jobId = createJob(job);
     deployJob(jobId, testHost());
-    TaskStatus jobState = awaitTaskState(jobId, testHost(), HEALTHCHECKING);
+    final TaskStatus jobState = awaitTaskState(jobId, testHost(), HEALTHCHECKING);
 
     // wait a few seconds to see if the service gets registered
     Thread.sleep(3000);
@@ -285,13 +285,13 @@ public class HealthCheckTest extends ServiceRegistrationTestBase {
   private static Matcher<DockerClient> execCompatibleDockerVersion() {
     return new CustomTypeSafeMatcher<DockerClient>("docker version") {
       @Override
-      protected boolean matchesSafely(DockerClient client) {
+      protected boolean matchesSafely(final DockerClient client) {
         try {
-          String driver = client.info().executionDriver();
-          Iterator<String> version =
+          final String driver = client.info().executionDriver();
+          final Iterator<String> version =
               Splitter.on('.').split(client.version().apiVersion()).iterator();
-          int apiVersionMajor = Integer.parseInt(version.next());
-          int apiVersionMinor = Integer.parseInt(version.next());
+          final int apiVersionMajor = Integer.parseInt(version.next());
+          final int apiVersionMinor = Integer.parseInt(version.next());
           return driver.startsWith("native") && apiVersionMajor == 1 && apiVersionMinor >= 18;
         } catch (Exception e) {
           return false;

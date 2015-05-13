@@ -60,16 +60,16 @@ public class ExecHealthCheckerTest {
   public void setUp() throws Exception {
     healthCheck = ExecHealthCheck.of("exit 0");
 
-    Info info = mock(Info.class);
+    final Info info = mock(Info.class);
     when(info.executionDriver()).thenReturn("native-0.2");
 
-    Version version = mock(Version.class);
+    final Version version = mock(Version.class);
     when(version.apiVersion()).thenReturn("1.18");
 
-    ExecState execState = mock(ExecState.class);
+    final ExecState execState = mock(ExecState.class);
     when(execState.exitCode()).thenReturn(0);
 
-    LogStream log = mock(LogStream.class);
+    final LogStream log = mock(LogStream.class);
     when(log.readFully()).thenReturn("");
 
     docker = mock(DockerClient.class);
@@ -90,7 +90,7 @@ public class ExecHealthCheckerTest {
 
   @Test
   public void testHealthCheckFailure() throws Exception {
-    ExecState execState = mock(ExecState.class);
+    final ExecState execState = mock(ExecState.class);
     when(execState.exitCode()).thenReturn(2);
     when(docker.execInspect(EXEC_ID)).thenReturn(execState);
 
@@ -99,7 +99,7 @@ public class ExecHealthCheckerTest {
 
   @Test
   public void testIncompatibleVersion() throws Exception {
-    Version version = mock(Version.class);
+    final Version version = mock(Version.class);
     when(version.apiVersion()).thenReturn("1.15");
     when(docker.version()).thenReturn(version);
 
@@ -109,7 +109,7 @@ public class ExecHealthCheckerTest {
 
   @Test
   public void testNotNativeDriver() throws Exception {
-    Info info = mock(Info.class);
+    final Info info = mock(Info.class);
     when(info.executionDriver()).thenReturn("lxc");
     when(docker.info()).thenReturn(info);
 
